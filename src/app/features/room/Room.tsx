@@ -18,6 +18,7 @@ import { CallView } from '../call/CallView';
 import { RoomViewHeader } from './RoomViewHeader';
 import { callChatAtom } from '../../state/callEmbed';
 import { CallChatView } from './CallChatView';
+import { ThreadDrawer } from './ThreadDrawer';
 
 export function Room() {
   const { eventId } = useParams();
@@ -25,6 +26,7 @@ export function Room() {
   const mx = useMatrixClient();
 
   const [isDrawer] = useSetting(settingsAtom, 'isPeopleDrawer');
+  const [isThreadOpen] = useSetting(settingsAtom, 'isThreadOpen');
   const [hideActivity] = useSetting(settingsAtom, 'hideActivity');
   const screenSize = useScreenSizeContext();
   const powerLevels = usePowerLevels(room);
@@ -39,8 +41,8 @@ export function Room() {
           markAsRead(mx, room.roomId, hideActivity);
         }
       },
-      [mx, room.roomId, hideActivity]
-    )
+      [mx, room.roomId, hideActivity],
+    ),
   );
 
   const callView = room.isCallRoom();
@@ -77,6 +79,12 @@ export function Room() {
           <>
             <Line variant="Background" direction="Vertical" size="300" />
             <MembersDrawer key={room.roomId} room={room} members={members} />
+          </>
+        )}
+        {!callView && screenSize === ScreenSize.Desktop && isThreadOpen && (
+          <>
+            <Line variant="Background" direction="Vertical" size="300" />
+            <ThreadDrawer key={room.roomId} room={room} />
           </>
         )}
       </Box>

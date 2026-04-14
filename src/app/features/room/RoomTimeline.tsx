@@ -84,7 +84,7 @@ import {
   isMembershipChanged,
   reactionOrEditEvent,
 } from '../../utils/room';
-import { useSetting } from '../../state/hooks/settings';
+import { useSetting, useSetSetting } from '../../state/hooks/settings';
 import { MessageLayout, settingsAtom } from '../../state/settings';
 import { useMatrixEventRenderer } from '../../hooks/useMatrixEventRenderer';
 import { Reactions, Message, Event, EncryptedContent } from './message';
@@ -138,7 +138,7 @@ const TimelineFloat = as<'div', css.TimelineFloatVariants>(
       {...props}
       ref={ref}
     />
-  )
+  ),
 );
 
 const TimelineDivider = as<'div', { variant?: ContainerColor | 'Inherit' }>(
@@ -148,7 +148,7 @@ const TimelineDivider = as<'div', { variant?: ContainerColor | 'Inherit' }>(
       {children}
       <Line style={{ flexGrow: 1 }} variant={variant} size="300" />
     </Box>
-  )
+  ),
 );
 
 export const getLiveTimeline = (room: Room): EventTimeline =>
@@ -161,7 +161,7 @@ export const getEventTimeline = (room: Room, eventId: string): EventTimeline | u
 
 export const getFirstLinkedTimeline = (
   timeline: EventTimeline,
-  direction: Direction
+  direction: Direction,
 ): EventTimeline => {
   const linkedTm = timeline.getNeighbouringTimeline(direction);
   if (!linkedTm) return timeline;
@@ -191,7 +191,7 @@ export const getTimelinesEventsCount = (timelines: EventTimeline[]): number => {
 
 export const getTimelineAndBaseIndex = (
   timelines: EventTimeline[],
-  index: number
+  index: number,
 ): [EventTimeline | undefined, number] => {
   let uptoTimelineLen = 0;
   const timeline = timelines.find((t) => {
@@ -212,7 +212,7 @@ export const getTimelineEvent = (timeline: EventTimeline, index: number): Matrix
 export const getEventIdAbsoluteIndex = (
   timelines: EventTimeline[],
   eventTimeline: EventTimeline,
-  eventId: string
+  eventId: string,
 ): number | undefined => {
   const timelineIndex = timelines.findIndex((t) => t === eventTimeline);
   if (timelineIndex === -1) return undefined;
@@ -242,12 +242,12 @@ const useEventTimelineLoader = (
   mx: MatrixClient,
   room: Room,
   onLoad: (eventId: string, linkedTimelines: EventTimeline[], evtAbsIndex: number) => void,
-  onError: (err: Error | null) => void
+  onError: (err: Error | null) => void,
 ) => {
   const loadEventTimeline = useCallback(
     async (eventId: string) => {
       const [err, replyEvtTimeline] = await to(
-        mx.getEventTimeline(room.getUnfilteredTimelineSet(), eventId)
+        mx.getEventTimeline(room.getUnfilteredTimelineSet(), eventId),
       );
       if (!replyEvtTimeline) {
         onError(err ?? null);
@@ -263,7 +263,7 @@ const useEventTimelineLoader = (
 
       onLoad(eventId, linkedTimelines, absIndex);
     },
-    [mx, room, onLoad, onError]
+    [mx, room, onLoad, onError],
   );
 
   return loadEventTimeline;
@@ -273,7 +273,7 @@ const useTimelinePagination = (
   mx: MatrixClient,
   timeline: Timeline,
   setTimeline: Dispatch<SetStateAction<Timeline>>,
-  limit: number
+  limit: number,
 ) => {
   const timelineRef = useRef(timeline);
   timelineRef.current = timeline;
@@ -285,7 +285,7 @@ const useTimelinePagination = (
     const recalibratePagination = (
       linkedTimelines: EventTimeline[],
       timelinesEventsCount: number[],
-      backwards: boolean
+      backwards: boolean,
     ) => {
       const topTimeline = linkedTimelines[0];
       const timelineMatch = (mt: EventTimeline) => (t: EventTimeline) => t === mt;
@@ -319,7 +319,7 @@ const useTimelinePagination = (
       if (!timelineToPaginate) return;
 
       const paginationToken = timelineToPaginate.getPaginationToken(
-        backwards ? Direction.Backward : Direction.Forward
+        backwards ? Direction.Backward : Direction.Forward,
       );
       if (
         !paginationToken &&
@@ -335,7 +335,7 @@ const useTimelinePagination = (
         mx.paginateEventTimeline(timelineToPaginate, {
           backwards,
           limit,
-        })
+        }),
       );
       if (err) {
         // TODO: handle pagination error.
@@ -343,7 +343,7 @@ const useTimelinePagination = (
       }
       const fetchedTimeline =
         timelineToPaginate.getNeighbouringTimeline(
-          backwards ? Direction.Backward : Direction.Forward
+          backwards ? Direction.Backward : Direction.Forward,
         ) ?? timelineToPaginate;
       // Decrypt all event ahead of render cycle
       const roomId = fetchedTimeline.getRoomId();
@@ -369,7 +369,7 @@ const useLiveEventArrive = (room: Room, onArrive: (mEvent: MatrixEvent) => void)
       eventRoom,
       toStartOfTimeline,
       removed,
-      data
+      data,
     ) => {
       if (eventRoom?.roomId !== room.roomId || !data.liveEvent) return;
       onArrive(mEvent);
@@ -447,6 +447,9 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   const showUrlPreview = room.hasEncryptionStateEvent() ? encUrlPreview : urlPreview;
   const [showHiddenEvents] = useSetting(settingsAtom, 'showHiddenEvents');
   const [showDeveloperTools] = useSetting(settingsAtom, 'developerTools');
+  const [isThreadOpen, setIsThreadOpen] = useSetting(settingsAtom, 'isThreadOpen');
+  const setActiveThreadId = useSetSetting(settingsAtom, 'activeThreadId');
+  const [threadView] = useSetting(settingsAtom, 'threadView');
 
   const [hour24Clock] = useSetting(settingsAtom, 'hour24Clock');
   const [dateFormatString] = useSetting(settingsAtom, 'dateFormatString');
@@ -466,7 +469,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   const accessiblePowerTagColors = useAccessiblePowerTagColors(
     theme.kind,
     creatorsTag,
-    powerLevelTags
+    powerLevelTags,
   );
 
   const permissions = useRoomPermissions(creators, powerLevels);
@@ -518,10 +521,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
     () => ({
       ...LINKIFY_OPTS,
       render: factoryRenderLinkifyWithMention((href) =>
-        renderMatrixMention(mx, room.roomId, href, makeMentionCustomProps(mentionClickHandler))
+        renderMatrixMention(mx, room.roomId, href, makeMentionCustomProps(mentionClickHandler)),
       ),
     }),
-    [mx, room, mentionClickHandler]
+    [mx, room, mentionClickHandler],
   );
   const htmlReactParserOptions = useMemo<HTMLReactParserOptions>(
     () =>
@@ -531,12 +534,12 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         handleSpoilerClick: spoilerClickHandler,
         handleMentionClick: mentionClickHandler,
       }),
-    [mx, room, linkifyOpts, spoilerClickHandler, mentionClickHandler, useAuthentication]
+    [mx, room, linkifyOpts, spoilerClickHandler, mentionClickHandler, useAuthentication],
   );
   const parseMemberEvent = useMemberEventParser();
 
   const [timeline, setTimeline] = useState<Timeline>(() =>
-    eventId ? getEmptyTimeline() : getInitialTimeline(room)
+    eventId ? getEmptyTimeline() : getInitialTimeline(room),
   );
   const eventsLength = getTimelinesEventsCount(timeline.linkedTimelines);
   const liveTimelineLinked =
@@ -552,7 +555,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
     mx,
     timeline,
     setTimeline,
-    PAGINATION_LIMIT
+    PAGINATION_LIMIT,
   );
 
   const getScrollElement = useCallback(() => scrollRef.current, []);
@@ -568,7 +571,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         (index: number) =>
           (scrollRef.current?.querySelector(`[data-message-item="${index}"]`) as HTMLElement) ??
           undefined,
-        []
+        [],
       ),
       onEnd: handleTimelinePagination,
     });
@@ -594,14 +597,14 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           },
         });
       },
-      [alive]
+      [alive],
     ),
     useCallback(() => {
       if (!alive()) return;
       setTimeline(getInitialTimeline(room));
       scrollToBottomRef.current.count += 1;
       scrollToBottomRef.current.smooth = false;
-    }, [alive, room])
+    }, [alive, room]),
   );
 
   useLiveEventArrive(
@@ -641,15 +644,15 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           setUnreadInfo(getRoomUnreadInfo(room));
         }
       },
-      [mx, room, unreadInfo, hideActivity]
-    )
+      [mx, room, unreadInfo, hideActivity],
+    ),
   );
 
   const handleOpenEvent = useCallback(
     async (
       evtId: string,
       highlight = true,
-      onScroll: ((scrolled: boolean) => void) | undefined = undefined
+      onScroll: ((scrolled: boolean) => void) | undefined = undefined,
     ) => {
       const evtTimeline = getEventTimeline(room, evtId);
       const absoluteIndex =
@@ -672,7 +675,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         loadEventTimeline(evtId);
       }
     },
-    [room, timeline, scrollToItem, loadEventTimeline]
+    [room, timeline, scrollToItem, loadEventTimeline],
   );
 
   useLiveTimelineRefresh(
@@ -681,7 +684,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       if (liveTimelineLinked) {
         setTimeline(getInitialTimeline(room));
       }
-    }, [room, liveTimelineLinked])
+    }, [room, liveTimelineLinked]),
   );
 
   // Stay at bottom when room editor resize
@@ -704,7 +707,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         }
       };
     }, [getScrollElement, roomInputRef]),
-    useCallback(() => roomInputRef.current, [roomInputRef])
+    useCallback(() => roomInputRef.current, [roomInputRef]),
   );
 
   const tryAutoMarkAsRead = useCallback(() => {
@@ -724,7 +727,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
     useCallback((entry: IntersectionObserverEntry) => {
       if (!entry.isIntersecting) setAtBottom(false);
     }, []),
-    { wait: 1000 }
+    { wait: 1000 },
   );
   useIntersectionObserver(
     useCallback(
@@ -740,16 +743,16 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           }
         }
       },
-      [debounceSetAtBottom, tryAutoMarkAsRead]
+      [debounceSetAtBottom, tryAutoMarkAsRead],
     ),
     useCallback(
       () => ({
         root: getScrollElement(),
         rootMargin: '100px',
       }),
-      [getScrollElement]
+      [getScrollElement],
     ),
-    useCallback(() => atBottomAnchorRef.current, [])
+    useCallback(() => atBottomAnchorRef.current, []),
   );
 
   useDocumentFocusChange(
@@ -769,8 +772,8 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           tryAutoMarkAsRead();
         }
       },
-      [tryAutoMarkAsRead, unreadInfo, handleOpenEvent]
-    )
+      [tryAutoMarkAsRead, unreadInfo, handleOpenEvent],
+    ),
   );
 
   // Handle up arrow edit
@@ -785,7 +788,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           isEmptyEditor(editor)
         ) {
           const editableEvt = getLatestEditableEvt(room.getLiveTimeline(), (mEvt) =>
-            canEditEvent(mx, mEvt)
+            canEditEvent(mx, mEvt),
           );
           const editableEvtId = editableEvt?.getId();
           if (!editableEvtId) return;
@@ -793,8 +796,8 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           evt.preventDefault();
         }
       },
-      [mx, room, editor]
-    )
+      [mx, room, editor],
+    ),
   );
 
   useEffect(() => {
@@ -909,7 +912,15 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       if (!targetId) return;
       handleOpenEvent(targetId);
     },
-    [handleOpenEvent]
+    [handleOpenEvent],
+  );
+
+  const handleOpenThread = useCallback(
+    (threadId: string) => {
+      setIsThreadOpen(true);
+      setActiveThreadId(threadId);
+    },
+    [setIsThreadOpen, setActiveThreadId],
   );
 
   const handleUserClick: MouseEventHandler<HTMLButtonElement> = useCallback(
@@ -925,10 +936,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         room.roomId,
         space?.roomId,
         userId,
-        evt.currentTarget.getBoundingClientRect()
+        evt.currentTarget.getBoundingClientRect(),
       );
     },
-    [room, space, openUserRoomProfile]
+    [room, space, openUserRoomProfile],
   );
   const handleUsernameClick: MouseEventHandler<HTMLButtonElement> = useCallback(
     (evt) => {
@@ -943,13 +954,13 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         createMentionElement(
           userId,
           name.startsWith('@') ? name : `@${name}`,
-          userId === mx.getUserId()
-        )
+          userId === mx.getUserId(),
+        ),
       );
       ReactEditor.focus(editor);
       moveCursor(editor);
     },
-    [mx, room, editor]
+    [mx, room, editor],
   );
 
   const handleReplyClick: MouseEventHandler<HTMLButtonElement> = useCallback(
@@ -979,7 +990,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         setTimeout(() => ReactEditor.focus(editor), 100);
       }
     },
-    [room, setReplyDraft, editor]
+    [room, setReplyDraft, editor],
   );
 
   const handleReactionToggle = useCallback(
@@ -1000,10 +1011,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       mx.sendEvent(
         room.roomId,
         MessageEvent.Reaction as any,
-        getReactionContent(targetEventId, key, rShortcode)
+        getReactionContent(targetEventId, key, rShortcode),
       );
     },
-    [mx, room]
+    [mx, room],
   );
   const handleEdit = useCallback(
     (editEvtId?: string) => {
@@ -1014,9 +1025,69 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       setEditId(undefined);
       ReactEditor.focus(editor);
     },
-    [editor]
+    [editor],
   );
   const { t } = useTranslation();
+
+  const threadRootIds = useMemo(() => {
+    const ids = new Set<string>();
+    const timelineSet = room.getUnfilteredTimelineSet();
+    const timelines = timelineSet.getTimelines();
+    timelines.forEach((timeline) => {
+      timeline.getEvents().forEach((evt) => {
+        if (evt.threadRootId) {
+          ids.add(evt.threadRootId);
+        }
+      });
+    });
+    return ids;
+  }, [room]);
+
+  const threadInfoMap = useMemo(() => {
+    const infoMap = new Map<
+      string,
+      { replyCount: number; lastReplySender: string; lastReplyText: string }
+    >();
+    const timelineSet = room.getUnfilteredTimelineSet();
+    const timelines = timelineSet.getTimelines();
+
+    const threadReplies = new Map<string, MatrixEvent[]>();
+    timelines.forEach((timeline) => {
+      timeline.getEvents().forEach((evt) => {
+        if (evt.threadRootId) {
+          const replies = threadReplies.get(evt.threadRootId) || [];
+          replies.push(evt);
+          threadReplies.set(evt.threadRootId, replies);
+        }
+      });
+    });
+
+    threadReplies.forEach((replies, rootId) => {
+      if (replies.length > 0) {
+        const sortedReplies = replies.sort((a, b) => a.getTs() - b.getTs());
+        const lastReply = sortedReplies[sortedReplies.length - 1];
+        const lastReplySenderId = lastReply.getSender() ?? '';
+        const lastReplySender =
+          getMemberDisplayName(room, lastReplySenderId) ||
+          getMxIdLocalPart(lastReplySenderId) ||
+          '';
+        const lastReplyText = (lastReply.getContent().body || 'Message').substring(0, 50);
+
+        infoMap.set(rootId, {
+          replyCount: replies.length,
+          lastReplySender,
+          lastReplyText,
+        });
+      }
+    });
+
+    return infoMap;
+  }, [room]);
+
+  const isThreadRoot = useCallback(
+    (evId: string) => threadRootIds.has(evId),
+    [threadRootIds],
+  );
 
   const renderMatrixEvent = useMatrixEventRenderer<
     [string, MatrixEvent, number, EventTimelineSet, boolean]
@@ -1028,6 +1099,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         const hasReactions = reactions && reactions.length > 0;
         const { replyEventId, threadRootId } = mEvent;
         const highlighted = focusItem?.index === item && focusItem.highlight;
+        const isThreadRootEvent = isThreadRoot(mEventId);
 
         const editedEvent = getEditedEvent(mEventId, mEvent, timelineSet);
         const getContent = (() =>
@@ -1057,6 +1129,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
             onUserClick={handleUserClick}
             onUsernameClick={handleUsernameClick}
             onReplyClick={handleReplyClick}
+            onOpenThread={handleOpenThread}
             onReactionToggle={handleReactionToggle}
             onEditId={handleEdit}
             reply={
@@ -1092,6 +1165,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
             legacyUsernameColor={legacyUsernameColor || direct}
             hour24Clock={hour24Clock}
             dateFormatString={dateFormatString}
+            forceThreadRoot={isThreadRootEvent}
+            threadReplyCount={threadInfoMap.get(mEventId)?.replyCount}
+            threadLastReplySender={threadInfoMap.get(mEventId)?.lastReplySender}
+            threadLastReplyText={threadInfoMap.get(mEventId)?.lastReplyText}
           >
             {mEvent.isRedacted() ? (
               <RedactedContent reason={mEvent.getUnsigned().redacted_because?.content.reason} />
@@ -1118,6 +1195,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         const hasReactions = reactions && reactions.length > 0;
         const { replyEventId, threadRootId } = mEvent;
         const highlighted = focusItem?.index === item && focusItem.highlight;
+        const isThreadRootEncrypted = isThreadRoot(mEventId);
 
         return (
           <Message
@@ -1139,8 +1217,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
             onUserClick={handleUserClick}
             onUsernameClick={handleUsernameClick}
             onReplyClick={handleReplyClick}
+            onOpenThread={handleOpenThread}
             onReactionToggle={handleReactionToggle}
             onEditId={handleEdit}
+            forceThreadRoot={isThreadRootEncrypted}
             reply={
               replyEventId && (
                 <Reply
@@ -1174,6 +1254,9 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
             legacyUsernameColor={legacyUsernameColor || direct}
             hour24Clock={hour24Clock}
             dateFormatString={dateFormatString}
+            threadReplyCount={threadInfoMap.get(mEventId)?.replyCount}
+            threadLastReplySender={threadInfoMap.get(mEventId)?.lastReplySender}
+            threadLastReplyText={threadInfoMap.get(mEventId)?.lastReplyText}
           >
             <EncryptedContent mEvent={mEvent}>
               {() => {
@@ -1237,6 +1320,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         const reactions = reactionRelations && reactionRelations.getSortedAnnotationsByKey();
         const hasReactions = reactions && reactions.length > 0;
         const highlighted = focusItem?.index === item && focusItem.highlight;
+        const isThreadRootSticker = isThreadRoot(mEventId);
 
         return (
           <Message
@@ -1257,6 +1341,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
             onUserClick={handleUserClick}
             onUsernameClick={handleUsernameClick}
             onReplyClick={handleReplyClick}
+            onOpenThread={handleOpenThread}
             onReactionToggle={handleReactionToggle}
             reactions={
               reactionRelations && (
@@ -1277,6 +1362,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
             legacyUsernameColor={legacyUsernameColor || direct}
             hour24Clock={hour24Clock}
             dateFormatString={dateFormatString}
+            forceThreadRoot={isThreadRootSticker}
+            threadReplyCount={threadInfoMap.get(mEventId)?.replyCount}
+            threadLastReplySender={threadInfoMap.get(mEventId)?.lastReplySender}
+            threadLastReplyText={threadInfoMap.get(mEventId)?.lastReplyText}
           >
             {mEvent.isRedacted() ? (
               <RedactedContent reason={mEvent.getUnsigned().redacted_because?.content.reason} />
@@ -1617,7 +1706,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           />
         </Event>
       );
-    }
+    },
   );
 
   let prevEvent: MatrixEvent | undefined;
@@ -1638,6 +1727,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       return null;
     }
     if (mEvent.isRedacted() && !showHiddenEvents) {
+      return null;
+    }
+
+    if (threadView && mEvent.threadRootId && mEvent.getId() !== mEvent.threadRootId) {
       return null;
     }
 
@@ -1666,7 +1759,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           mEvent,
           item,
           timelineSet,
-          collapsed
+          collapsed,
         );
     prevEvent = mEvent;
     isPrevRendered = !!eventJSX;

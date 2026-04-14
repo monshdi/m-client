@@ -150,7 +150,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const accessibleTagColors = useAccessiblePowerTagColors(
       theme.kind,
       creatorsTag,
-      powerLevelTags
+      powerLevelTags,
     );
 
     const replyPowerTag = replyUserID ? getMemberPowerTag(replyUserID) : undefined;
@@ -164,7 +164,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
     const [selectedFiles, setSelectedFiles] = useAtom(roomIdToUploadItemsAtomFamily(roomId));
     const uploadFamilyObserverAtom = createUploadFamilyObserverAtom(
       roomUploadAtomFamily,
-      selectedFiles.map((f) => f.file)
+      selectedFiles.map((f) => f.file),
     );
     const uploadBoardHandlers = useRef<UploadBoardImperativeHandlers>();
 
@@ -184,7 +184,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
 
         if (room.hasEncryptionStateEvent()) {
           const encryptFiles = fulfilledPromiseSettledResult(
-            await Promise.allSettled(safeFiles.map((f) => encryptFile(f)))
+            await Promise.allSettled(safeFiles.map((f) => encryptFile(f))),
           );
           encryptFiles.forEach((ef) =>
             fileItems.push({
@@ -192,7 +192,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
               metadata: {
                 markedAsSpoiler: false,
               },
-            })
+            }),
           );
         } else {
           safeFiles.forEach((f) =>
@@ -203,7 +203,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
               metadata: {
                 markedAsSpoiler: false,
               },
-            })
+            }),
           );
         }
         setSelectedFiles({
@@ -211,7 +211,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           item: fileItems,
         });
       },
-      [setSelectedFiles, room]
+      [setSelectedFiles, room],
     );
     const pickFile = useFilePicker(handleFiles, true);
     const handlePaste = useFilePasteHandler(handleFiles);
@@ -222,25 +222,33 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
 
     useElementSizeObserver(
       useCallback(() => fileDropContainerRef.current, [fileDropContainerRef]),
-      useCallback((width) => setHideStickerBtn(width < 500), [])
+      useCallback((width) => setHideStickerBtn(width < 500), []),
     );
 
     useEffect(() => {
-      Transforms.insertFragment(editor, msgDraft);
+      try {
+        Transforms.insertFragment(editor, msgDraft);
+      } catch {
+        // Editor state might be invalid, ignore
+      }
     }, [editor, msgDraft]);
 
     useEffect(
       () => () => {
-        if (!isEmptyEditor(editor)) {
-          const parsedDraft = JSON.parse(JSON.stringify(editor.children));
-          setMsgDraft(parsedDraft);
-        } else {
-          setMsgDraft([]);
+        try {
+          if (!isEmptyEditor(editor)) {
+            const parsedDraft = JSON.parse(JSON.stringify(editor.children));
+            setMsgDraft(parsedDraft);
+          } else {
+            setMsgDraft([]);
+          }
+          resetEditor(editor);
+          resetEditorHistory(editor);
+        } catch {
+          // Editor state might be invalid, ignore
         }
-        resetEditor(editor);
-        resetEditorHistory(editor);
       },
-      [roomId, editor, setMsgDraft]
+      [roomId, editor, setMsgDraft],
     );
 
     const handleFileMetadata = useCallback(
@@ -251,7 +259,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           replacement: { ...fileItem, metadata },
         });
       },
-      [setSelectedFiles]
+      [setSelectedFiles],
     );
 
     const handleRemoveUpload = useCallback(
@@ -263,7 +271,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         });
         uploads.forEach((u) => roomUploadAtomFamily.remove(u));
       },
-      [setSelectedFiles, selectedFiles]
+      [setSelectedFiles, selectedFiles],
     );
 
     const handleCancelUpload = (uploads: Upload[]) => {
@@ -306,7 +314,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           allowTextFormatting: true,
           allowBlockMarkdown: isMarkdown,
           allowInlineMarkdown: isMarkdown,
-        })
+        }),
       );
       let msgType = MsgType.Text;
 
@@ -397,7 +405,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           setReplyDraft(undefined);
         }
       },
-      [submit, setReplyDraft, enterForNewline, autocompleteQuery, isComposing]
+      [submit, setReplyDraft, enterForNewline, autocompleteQuery, isComposing],
     );
 
     const handleKeyUp: KeyboardEventHandler = useCallback(
@@ -417,7 +425,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
           : undefined;
         setAutocompleteQuery(query);
       },
-      [editor, sendTypingStatus, hideActivity]
+      [editor, sendTypingStatus, hideActivity],
     );
 
     const handleCloseAutocomplete = useCallback(() => {
@@ -436,7 +444,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
 
       const info = await getImageInfo(
         await loadImageElement(stickerUrl),
-        await getImageUrlBlob(stickerUrl)
+        await getImageUrlBlob(stickerUrl),
       );
 
       mx.sendEvent(roomId, EventType.Sticker, {
@@ -612,7 +620,7 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
                     anchor={
                       emojiBoardTab === undefined
                         ? undefined
-                        : emojiBtnRef.current?.getBoundingClientRect() ?? undefined
+                        : (emojiBtnRef.current?.getBoundingClientRect() ?? undefined)
                     }
                     content={
                       <EmojiBoard
@@ -685,5 +693,5 @@ export const RoomInput = forwardRef<HTMLDivElement, RoomInputProps>(
         />
       </div>
     );
-  }
+  },
 );

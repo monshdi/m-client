@@ -53,9 +53,7 @@ import {
   getMemberDisplayName,
 } from '../../../utils/room';
 import {
-  getCanonicalAliasOrRoomId,
   getMxIdLocalPart,
-  isRoomAlias,
   mxcUrlToHttp,
 } from '../../../utils/matrix';
 import { MessageLayout, MessageSpacing } from '../../../state/settings';
@@ -119,7 +117,7 @@ export const MessageQuickReactions = as<'div', MessageQuickReactionsProps>(
         <Line size="300" />
       </>
     );
-  }
+  },
 );
 
 export const MessageAllReactionItem = as<
@@ -404,8 +402,8 @@ export const MessageDeleteItem = as<
     useCallback(
       (eventId: string, reason?: string) =>
         mx.redactEvent(room.roomId, eventId, undefined, reason ? { reason } : undefined),
-      [mx, room]
-    )
+      [mx, room],
+    ),
   );
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
@@ -533,8 +531,8 @@ export const MessageReportItem = as<
     useCallback(
       (eventId: string, score: number, reason: string) =>
         mx.reportEvent(room.roomId, eventId, score, reason),
-      [mx, room]
-    )
+      [mx, room],
+    ),
   );
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = (evt) => {
@@ -669,8 +667,9 @@ export type MessageProps = {
   onUsernameClick: MouseEventHandler<HTMLButtonElement>;
   onReplyClick: (
     ev: Parameters<MouseEventHandler<HTMLButtonElement>>[0],
-    startThread?: boolean
+    startThread?: boolean,
   ) => void;
+  onOpenThread?: (eventId: string) => void;
   onEditId?: (eventId?: string) => void;
   onReactionToggle: (targetEventId: string, key: string, shortcode?: string) => void;
   reply?: ReactNode;
@@ -682,6 +681,10 @@ export type MessageProps = {
   legacyUsernameColor?: boolean;
   hour24Clock: boolean;
   dateFormatString: string;
+  forceThreadRoot?: boolean;
+  threadReplyCount?: number;
+  threadLastReplySender?: string;
+  threadLastReplyText?: string;
 };
 export const Message = as<'div', MessageProps>(
   (
@@ -702,6 +705,7 @@ export const Message = as<'div', MessageProps>(
       onUserClick,
       onUsernameClick,
       onReplyClick,
+      onOpenThread,
       onReactionToggle,
       onEditId,
       reply,
@@ -713,10 +717,14 @@ export const Message = as<'div', MessageProps>(
       legacyUsernameColor,
       hour24Clock,
       dateFormatString,
+      forceThreadRoot,
+      threadReplyCount,
+      threadLastReplySender,
+      threadLastReplyText,
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const mx = useMatrixClient();
     const useAuthentication = useMediaAuthentication();
@@ -803,7 +811,8 @@ export const Message = as<'div', MessageProps>(
             userId={senderId}
             src={
               senderAvatarMxc
-                ? mxcUrlToHttp(mx, senderAvatarMxc, useAuthentication, 48, 48, 'crop') ?? undefined
+                ? (mxcUrlToHttp(mx, senderAvatarMxc, useAuthentication, 48, 48, 'crop') ??
+                  undefined)
                 : undefined
             }
             alt={senderDisplayName}
@@ -873,6 +882,38 @@ export const Message = as<'div', MessageProps>(
     };
 
     const isThreadedMessage = mEvent.threadRootId !== undefined;
+    const { isThreadRoot: mEventIsThreadRoot } = mEvent;
+    const isThreadRootEvent = forceThreadRoot || mEventIsThreadRoot;
+
+    const threadIndicatorJSX = isThreadRootEvent ? (
+      <Box
+        as="button"
+        direction="Column"
+        alignItems="Start"
+        gap="100"
+        onClick={(evt: React.MouseEvent) => {
+          evt.stopPropagation();
+          if (onOpenThread) {
+            onOpenThread(mEvent.getId()!);
+          }
+        }}
+        className={css.ThreadIndicator}
+      >
+        <Box alignItems="Center" gap="100">
+          <Icon size="100" src={Icons.Thread} />
+          <Text size="T200" priority="500">
+            {threadReplyCount && threadReplyCount > 0
+              ? `${threadReplyCount} ${threadReplyCount === 1 ? 'reply' : 'replies'}`
+              : 'Thread'}
+          </Text>
+        </Box>
+        {threadLastReplySender && threadLastReplyText && (
+          <Text size="T200" truncate style={{ maxWidth: '100%' }}>
+            <b>{threadLastReplySender}:</b> {threadLastReplyText}
+          </Text>
+        )}
+      </Box>
+    ) : null;
 
     return (
       <MessageBase
@@ -1132,22 +1173,25 @@ export const Message = as<'div', MessageProps>(
         {messageLayout === MessageLayout.Compact && (
           <CompactLayout before={headerJSX} onContextMenu={handleContextMenu}>
             {msgContentJSX}
+            {threadIndicatorJSX}
           </CompactLayout>
         )}
         {messageLayout === MessageLayout.Bubble && (
           <BubbleLayout before={avatarJSX} header={headerJSX} onContextMenu={handleContextMenu}>
             {msgContentJSX}
+            {threadIndicatorJSX}
           </BubbleLayout>
         )}
         {messageLayout !== MessageLayout.Compact && messageLayout !== MessageLayout.Bubble && (
           <ModernLayout before={avatarJSX} onContextMenu={handleContextMenu}>
             {headerJSX}
             {msgContentJSX}
+            {threadIndicatorJSX}
           </ModernLayout>
         )}
       </MessageBase>
     );
-  }
+  },
 );
 
 export type EventProps = {
@@ -1173,7 +1217,7 @@ export const Event = as<'div', EventProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const mx = useMatrixClient();
     const [hover, setHover] = useState(false);
@@ -1298,5 +1342,5 @@ export const Event = as<'div', EventProps>(
         <div onContextMenu={handleContextMenu}>{children}</div>
       </MessageBase>
     );
-  }
+  },
 );

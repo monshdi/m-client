@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { DefaultReset, config, toRem } from 'folds';
+import { DefaultReset, config, toRem, color } from 'folds';
 
 export const MessageBase = style({
   position: 'relative',
@@ -55,3 +55,25 @@ export const ReactionsContainer = style({
 export const ReactionsTooltipText = style({
   wordBreak: 'break-word',
 });
+
+export const ThreadIndicator = style([
+  DefaultReset,
+  {
+    display: 'flex',
+    gap: config.space.S100,
+    padding: `${config.space.S100} ${config.space.S200}`,
+    marginTop: config.space.S200,
+    borderRadius: config.radii.R300,
+    backgroundColor: color.SurfaceVariant.Container,
+    color: color.SurfaceVariant.OnContainer,
+    borderColor: color.SurfaceVariant.OnContainer,
+    border: '1px solid',
+    cursor: 'pointer',
+    textOverflow: 'ellipsis',
+    fontSize: toRem(12),
+    // width: 'fit-content',
+    ':hover': {
+      backgroundColor: color.SurfaceVariant.ContainerActive,
+    },
+  },
+]);

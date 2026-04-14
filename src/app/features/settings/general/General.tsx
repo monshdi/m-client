@@ -74,7 +74,7 @@ const ThemeSelector = as<'div', ThemeSelectorProps>(
         ))}
       </Box>
     </Menu>
-  )
+  ),
 );
 
 function SelectTheme({ disabled }: { disabled?: boolean }) {
@@ -882,15 +882,15 @@ function SelectMessageSpacing() {
 function Messages() {
   const [legacyUsernameColor, setLegacyUsernameColor] = useSetting(
     settingsAtom,
-    'legacyUsernameColor'
+    'legacyUsernameColor',
   );
   const [hideMembershipEvents, setHideMembershipEvents] = useSetting(
     settingsAtom,
-    'hideMembershipEvents'
+    'hideMembershipEvents',
   );
   const [hideNickAvatarEvents, setHideNickAvatarEvents] = useSetting(
     settingsAtom,
-    'hideNickAvatarEvents'
+    'hideNickAvatarEvents',
   );
   const [mediaAutoLoad, setMediaAutoLoad] = useSetting(settingsAtom, 'mediaAutoLoad');
   const [urlPreview, setUrlPreview] = useSetting(settingsAtom, 'urlPreview');
@@ -978,6 +978,23 @@ function Messages() {
   );
 }
 
+function ThreadViewSetting() {
+  const [threadView, setThreadView] = useSetting(settingsAtom, 'threadView');
+
+  return (
+    <Box direction="Column" gap="100">
+      <Text size="L400">Threads</Text>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Thread View"
+          description="Show thread replies separately from main timeline"
+          after={<Switch variant="Primary" value={threadView} onChange={setThreadView} />}
+        />
+      </SequenceCard>
+    </Box>
+  );
+}
+
 type GeneralProps = {
   requestClose: () => void;
 };
@@ -1006,6 +1023,7 @@ export function General({ requestClose }: GeneralProps) {
               <DateAndTime />
               <Editor />
               <Messages />
+              <ThreadViewSetting />
             </Box>
           </PageContent>
         </Scroll>

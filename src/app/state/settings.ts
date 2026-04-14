@@ -28,6 +28,7 @@ export interface Settings {
   hideActivity: boolean;
 
   isPeopleDrawer: boolean;
+  isThreadOpen: boolean;
   memberSortFilterIndex: number;
   enterForNewline: boolean;
   messageLayout: MessageLayout;
@@ -47,6 +48,8 @@ export interface Settings {
   dateFormatString: string;
 
   developerTools: boolean;
+  threadView: boolean;
+  activeThreadId: string | null;
 }
 
 const defaultSettings: Settings = {
@@ -62,6 +65,7 @@ const defaultSettings: Settings = {
   hideActivity: false,
 
   isPeopleDrawer: true,
+  isThreadOpen: true,
   memberSortFilterIndex: 0,
   enterForNewline: false,
   messageLayout: 0,
@@ -81,6 +85,8 @@ const defaultSettings: Settings = {
   dateFormatString: 'D MMM YYYY',
 
   developerTools: false,
+  threadView: true,
+  activeThreadId: null,
 };
 
 export const getSettings = () => {
@@ -102,5 +108,5 @@ export const settingsAtom = atom<Settings, [Settings], undefined>(
   (get, set, update) => {
     set(baseSettings, update);
     setSettings(update);
-  }
+  },
 );
