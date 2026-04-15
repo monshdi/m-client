@@ -65,7 +65,7 @@ const defaultSettings: Settings = {
   hideActivity: false,
 
   isPeopleDrawer: true,
-  isThreadOpen: true,
+  isThreadOpen: false,
   memberSortFilterIndex: 0,
   enterForNewline: false,
   messageLayout: 0,

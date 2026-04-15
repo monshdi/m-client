@@ -11,7 +11,6 @@ import { useSetting } from '../../state/hooks/settings';
 import { settingsAtom } from '../../state/settings';
 import {
   CustomEditor,
-  useEditor,
   Toolbar,
   toPlainText,
   isEmptyEditor,
@@ -58,6 +57,7 @@ import {
   UploadSuccess,
   createUploadFamilyObserverAtom,
 } from '../../state/upload';
+import useEditor from '../../components/editor/useEditor';
 
 type ThreadInputInnerProps = {
   room: Room;
@@ -427,6 +427,7 @@ type ThreadInputProps = {
 };
 
 export function ThreadInput(props: ThreadInputProps) {
-  const editor = useEditor();
+  // eslint-disable-next-line react/destructuring-assignment
+  const editor = useEditor([props.activeThreadId]);
   return <ThreadInputInner {...props} editor={editor} />;
 }

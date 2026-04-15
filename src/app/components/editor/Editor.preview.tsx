@@ -12,13 +12,14 @@ import {
   OverlayCenter,
 } from 'folds';
 
-import { CustomEditor, useEditor } from './Editor';
+import { CustomEditor } from './Editor';
 import { Toolbar } from './Toolbar';
 import { stopPropagation } from '../../utils/keyboard';
+import useEditor from './useEditor';
 
 export function EditorPreview() {
   const [open, setOpen] = useState(false);
-  const editor = useEditor();
+  const editor = useEditor([]);
   const [toolbar, setToolbar] = useState(false);
 
   return (

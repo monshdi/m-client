@@ -42,7 +42,6 @@ import {
   toMatrixCustomHTML,
   toPlainText,
   trimCustomHtml,
-  useEditor,
   getMentions,
 } from '../../../components/editor';
 import { useSetting } from '../../../state/hooks/settings';
@@ -54,6 +53,7 @@ import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { getEditedEvent, getMentionContent, trimReplyFromFormattedBody } from '../../../utils/room';
 import { mobileOrTablet } from '../../../utils/user-agent';
 import { useComposingCheck } from '../../../hooks/useComposingCheck';
+import useEditor from '../../../components/editor/useEditor';
 
 type MessageEditorProps = {
   roomId: string;
@@ -65,7 +65,7 @@ type MessageEditorProps = {
 export const MessageEditor = as<'div', MessageEditorProps>(
   ({ room, roomId, mEvent, imagePackRooms, onCancel, ...props }, ref) => {
     const mx = useMatrixClient();
-    const editor = useEditor();
+    const editor = useEditor([]);
     const [enterForNewline] = useSetting(settingsAtom, 'enterForNewline');
     const [globalToolbar] = useSetting(settingsAtom, 'editorToolbar');
     const [isMarkdown] = useSetting(settingsAtom, 'isMarkdown');

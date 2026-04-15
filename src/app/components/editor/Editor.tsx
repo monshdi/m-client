@@ -5,19 +5,16 @@ import React, {
   ReactNode,
   forwardRef,
   useCallback,
-  useState,
 } from 'react';
 import { Box, Scroll, Text } from 'folds';
-import { Descendant, Editor, createEditor } from 'slate';
+import { Descendant, Editor } from 'slate';
 import {
   Slate,
   Editable,
-  withReact,
   RenderLeafProps,
   RenderElementProps,
   RenderPlaceholderProps,
 } from 'slate-react';
-import { withHistory } from 'slate-history';
 import { BlockType } from './types';
 import { RenderElement, RenderLeaf } from './Elements';
 import { CustomElement } from './slate';
@@ -30,32 +27,6 @@ const initialValue: CustomElement[] = [
     children: [{ text: '' }],
   },
 ];
-
-const withInline = (editor: Editor): Editor => {
-  const { isInline } = editor;
-
-  editor.isInline = (element) =>
-    [BlockType.Mention, BlockType.Emoticon, BlockType.Link, BlockType.Command].includes(
-      element.type
-    ) || isInline(element);
-
-  return editor;
-};
-
-const withVoid = (editor: Editor): Editor => {
-  const { isVoid } = editor;
-
-  editor.isVoid = (element) =>
-    [BlockType.Mention, BlockType.Emoticon, BlockType.Command].includes(element.type) ||
-    isVoid(element);
-
-  return editor;
-};
-
-export const useEditor = (): Editor => {
-  const [editor] = useState(() => withInline(withVoid(withReact(withHistory(createEditor())))));
-  return editor;
-};
 
 export type EditorChangeHandler = (value: Descendant[]) => void;
 type CustomEditorProps = {

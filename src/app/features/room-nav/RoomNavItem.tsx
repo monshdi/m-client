@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, forwardRef, useState } from 'react';
+import React, { MouseEventHandler, forwardRef, useState, useCallback } from 'react';
 import { Room } from 'matrix-js-sdk';
 import {
   Avatar,
@@ -261,8 +261,15 @@ export function RoomNavItem({
   const typingMember = useRoomTypingMember(room.roomId).filter(
     (receipt) => receipt.userId !== mx.getUserId()
   );
+  const [, setIsThreadOpen] = useSetting(settingsAtom, 'isThreadOpen');
+  const [, setActiveThreadId] = useSetting(settingsAtom, 'activeThreadId');
 
   const roomName = useRoomName(room);
+
+  const handleClick = () => {
+    setIsThreadOpen(false);
+    setActiveThreadId(null);
+  }
 
   const handleContextMenu: MouseEventHandler<HTMLElement> = (evt) => {
     evt.preventDefault();
@@ -314,7 +321,7 @@ export function RoomNavItem({
       {...hoverProps}
       {...focusWithinProps}
     >
-      <NavLink to={linkPath} onClick={room.isCallRoom() ? handleStartCall : undefined}>
+      <NavLink to={linkPath} onClick={room.isCallRoom() ? handleStartCall : handleClick}>
         <NavItemContent>
           <Box as="span" grow="Yes" alignItems="Center" gap="200">
             <Avatar size="200" radii="400">

@@ -15,6 +15,8 @@ import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { getMxIdServer } from '../../../utils/matrix';
 import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { useNavToActivePathAtom } from '../../../state/hooks/navToActivePath';
+import { useSetting } from '../../../state/hooks/settings';
+import { settingsAtom } from '../../../state/settings';
 
 export function ExploreTab() {
   const mx = useMatrixClient();
@@ -22,10 +24,15 @@ export function ExploreTab() {
   const clientConfig = useClientConfig();
   const navigate = useNavigate();
   const navToActivePath = useAtomValue(useNavToActivePathAtom());
+  const [, setIsThreadOpen] = useSetting(settingsAtom, 'isThreadOpen');
+  const [, setActiveThreadId] = useSetting(settingsAtom, 'activeThreadId');
 
   const exploreSelected = useExploreSelected();
 
   const handleExploreClick = () => {
+    setActiveThreadId(null);
+    setIsThreadOpen(false);
+
     if (screenSize === ScreenSize.Mobile) {
       navigate(getExplorePath());
       return;

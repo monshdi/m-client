@@ -152,8 +152,8 @@ export function ThreadDrawer({ room }: ThreadDrawerProps) {
                     userId={senderId}
                     src={
                       senderAvatarMxc
-                        ? (mxcUrlToHttp(mx, senderAvatarMxc, useAuthentication, 48, 48, 'crop') ??
-                          undefined)
+                        ? mxcUrlToHttp(mx, senderAvatarMxc, useAuthentication, 48, 48, 'crop') ??
+                          undefined
                         : undefined
                     }
                     alt={senderDisplayName}
@@ -176,8 +176,8 @@ export function ThreadDrawer({ room }: ThreadDrawerProps) {
                   ts={parentEvent.getTs()}
                   edited={false}
                   getContent={() => parentEvent.getContent()}
-                  mediaAutoLoad={true}
-                  urlPreview={true}
+                  mediaAutoLoad
+                  urlPreview
                   htmlReactParserOptions={{
                     replace: (domNode) => false,
                   }}
@@ -214,14 +214,14 @@ export function ThreadDrawer({ room }: ThreadDrawerProps) {
                             userId={replySenderId}
                             src={
                               replySenderAvatarMxc
-                                ? (mxcUrlToHttp(
+                                ? mxcUrlToHttp(
                                     mx,
                                     replySenderAvatarMxc,
                                     useAuthentication,
                                     32,
                                     32,
-                                    'crop',
-                                  ) ?? undefined)
+                                    'crop'
+                                  ) ?? undefined
                                 : undefined
                             }
                             alt={replySenderDisplayName}
@@ -244,8 +244,8 @@ export function ThreadDrawer({ room }: ThreadDrawerProps) {
                           ts={relEvent.getTs()}
                           edited={false}
                           getContent={() => relEvent.getContent()}
-                          mediaAutoLoad={true}
-                          urlPreview={true}
+                          mediaAutoLoad
+                          urlPreview
                           htmlReactParserOptions={{
                             replace: (domNode) => false,
                           }}
@@ -263,11 +263,14 @@ export function ThreadDrawer({ room }: ThreadDrawerProps) {
           </Box>
         </Scroll>
       </Box>
-      <ThreadInput
-        room={room}
-        activeThreadId={activeThreadId}
-        onMessageSent={() => setRefreshKey((k) => k + 1)}
-      />
+      {!!activeThreadId && (
+        <ThreadInput
+          key={activeThreadId}
+          room={room}
+          activeThreadId={activeThreadId}
+          onMessageSent={() => setRefreshKey((k) => k + 1)}
+        />
+      )}
       <Box className={css.ResizeHandle} onMouseDown={handleMouseDown} />
     </Box>
   );

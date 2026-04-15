@@ -618,6 +618,8 @@ export function SpaceTabs({ scrollRef }: SpaceTabsProps) {
   const navToActivePath = useAtomValue(useNavToActivePathAtom());
   const [openedFolder, setOpenedFolder] = useAtom(useOpenedSidebarFolderAtom());
   const [draggingItem, setDraggingItem] = useState<SidebarDraggable>();
+  const [, setIsThreadOpen] = useSetting(settingsAtom, 'isThreadOpen');
+  const [, setActiveThreadId] = useSetting(settingsAtom, 'activeThreadId');
 
   useDnDMonitor(
     scrollRef,
@@ -758,6 +760,9 @@ export function SpaceTabs({ scrollRef }: SpaceTabsProps) {
     const target = evt.currentTarget;
     const targetSpaceId = target.getAttribute('data-id');
     if (!targetSpaceId) return;
+
+    setActiveThreadId(null);
+    setIsThreadOpen(false);
 
     const spacePath = getSpacePath(getCanonicalAliasOrRoomId(mx, targetSpaceId));
     if (screenSize === ScreenSize.Mobile) {

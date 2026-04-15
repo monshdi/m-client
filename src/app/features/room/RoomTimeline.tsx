@@ -980,6 +980,10 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         : replyEvt.getWireContent();
       const senderId = replyEvt.getSender();
       if (senderId && typeof body === 'string') {
+        if (startThread) {
+          setIsThreadOpen(true);
+          setActiveThreadId(replyId);
+        }
         setReplyDraft({
           userId: senderId,
           eventId: replyId,
@@ -990,7 +994,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
         setTimeout(() => ReactEditor.focus(editor), 100);
       }
     },
-    [room, setReplyDraft, editor],
+    [room, setReplyDraft, editor, setIsThreadOpen, setActiveThreadId],
   );
 
   const handleReactionToggle = useCallback(
@@ -1029,6 +1033,8 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   );
   const { t } = useTranslation();
 
+  const refreshKey = useRef(0);
+
   const threadRootIds = useMemo(() => {
     const ids = new Set<string>();
     const timelineSet = room.getUnfilteredTimelineSet();
@@ -1041,6 +1047,16 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       });
     });
     return ids;
+  }, [room, refreshKey.current]);
+
+  useEffect(() => {
+    const handleTimelineEvent = () => {
+      refreshKey.current += 1;
+    };
+    room.on(RoomEvent.Timeline, handleTimelineEvent);
+    return () => {
+      room.removeListener(RoomEvent.Timeline, handleTimelineEvent);
+    };
   }, [room]);
 
   const threadInfoMap = useMemo(() => {
@@ -1082,12 +1098,9 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
     });
 
     return infoMap;
-  }, [room]);
+  }, [room, refreshKey.current]);
 
-  const isThreadRoot = useCallback(
-    (evId: string) => threadRootIds.has(evId),
-    [threadRootIds],
-  );
+  const isThreadRoot = useCallback((evId: string) => threadRootIds.has(evId), [threadRootIds]);
 
   const renderMatrixEvent = useMatrixEventRenderer<
     [string, MatrixEvent, number, EventTimelineSet, boolean]
